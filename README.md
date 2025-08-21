@@ -22,7 +22,7 @@ This project transforms the complex world of distributed systems into an accessi
 2. **Browse by Category** - Use filter buttons to focus on specific domains
 3. **Search Patterns** - Type to find patterns by name or technology
 4. **Click Any Card** - Deep dive into architecture diagrams and examples
-5. **Follow Learning Paths** - Start with beginner patterns and progress upward
+5. **Follow Learning Paths** - Start with beginner patterns and progress from there!
 
 ## 📚 Pattern Categories
 
