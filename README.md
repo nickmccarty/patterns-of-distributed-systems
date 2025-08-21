@@ -65,7 +65,7 @@ Coordinating activities across distributed nodes
 
 ## 🎓 Learning Paths
 
-### **🌱 Beginner Path** (12 patterns)
+### **🌱 Beginner Path**
 Start here if you're new to distributed systems:
 
 1. **HeartBeat** - Learn failure detection
@@ -76,7 +76,7 @@ Start here if you're new to distributed systems:
 6. **Follower Reads** - Understand read scaling
 7. Continue with other beginner patterns...
 
-### **🚀 Intermediate Path** (11 patterns)
+### **🚀 Intermediate Path**
 Ready to tackle more complex scenarios:
 
 1. **Majority Quorum** - Learn consensus basics
@@ -85,7 +85,7 @@ Ready to tackle more complex scenarios:
 4. **High-Water Mark** - Grasp replication safety
 5. Continue with consensus and coordination patterns...
 
-### **🎯 Advanced Path** (7 patterns)
+### **🎯 Advanced Path**
 Master the most sophisticated concepts:
 
 1. **Paxos** - The gold standard of consensus
@@ -93,9 +93,9 @@ Master the most sophisticated concepts:
 3. **Hybrid Clock** - Combine physical and logical time
 4. **Version Vector** - Detect concurrent updates
 
-## 🛠️ Technologies Featured
+## 🛠️ Technologies Highlighted
 
-See real implementations across major distributed systems:
+Implementations across major distributed systems:
 
 | System | Patterns Used |
 |--------|---------------|
