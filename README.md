@@ -150,10 +150,6 @@ Found an issue or want to improve a pattern description?
 - **Additional tags** - Help with discoverability
 - **Mobile optimizations** - Improve the mobile experience
 
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
 ## 🙏 Acknowledgments
 
 - **Martin Fowler** - For the foundational patterns and explanations
