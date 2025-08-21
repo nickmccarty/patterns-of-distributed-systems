@@ -26,7 +26,7 @@ This project transforms the complex world of distributed systems into an accessi
 
 ## 📚 Pattern Categories
 
-### 🤝 **Consensus** (4 patterns)
+### 🤝 **Consensus** (3 patterns)
 Algorithms for nodes to agree on values despite failures
 - **Beginner**: None
 - **Intermediate**: Majority Quorum, Two-Phase Commit  
@@ -58,7 +58,7 @@ Persisting and managing data reliably
 - **Beginner**: Segmented Log, Versioned Value, Write-Ahead Log
 - **Intermediate**: Low-Water Mark
 
-### 🎯 **Coordination** (4 patterns)
+### 🎯 **Coordination** (5 patterns)
 Coordinating activities across distributed nodes
 - **Beginner**: Emergent Leader, Singular Update Queue
 - **Intermediate**: Consistent Core, Lease, Request Waiting List
