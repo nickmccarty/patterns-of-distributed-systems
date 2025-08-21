@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patterns of Distributed Systems</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .filters {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            max-width: 400px;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .search-box::placeholder {
+            color: #999;
+        }
+
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: white;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .stats {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: none;
+        }
+
+        .card.visible {
+            display: block;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .card h3 {
+            color: #2c3e50;
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card p {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .category-badge {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: #667eea;
+            color: white;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .difficulty-badge {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: auto;
+        }
+
+        .difficulty-beginner { background: #10b981; color: white; }
+        .difficulty-intermediate { background: #f59e0b; color: white; }
+        .difficulty-advanced { background: #ef4444; color: white; }
+
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            background: #f1f5f9;
+            color: #64748b;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .ascii-preview {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            line-height: 1.3;
+            color: #475569;
+            margin-bottom: 12px;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .card-icon {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            padding: 30px 30px 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-header h2 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-body p {
+            font-size: 1.1rem;
+            color: #444;
+            margin-bottom: 25px;
+            line-height: 1.7;
+        }
+
+        .oreilly-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 12px 24px;
+            background: #ff6b35;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .oreilly-link:hover {
+            background: #e55a2b;
+        }
+
+        .oreilly-link::after {
+            content: '→';
+            margin-left: 8px;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        .close:hover {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+            }
+            
+            .modal-header {
+                padding: 20px 20px 15px;
+            }
+            
+            .modal-header h2 {
+                font-size: 1.5rem;
+            }
+            
+            .modal-body {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+            
+            .header {
+                margin-bottom: 30px;
+            }
+            
+            .card {
+                padding: 18px;
+            }
+            
+            .modal-header {
+                padding: 18px 18px 12px;
+            }
+            
+            .modal-body {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Patterns of Distributed Systems</h1>
+            <p>Essential patterns for building reliable distributed systems</p>
+        </div>
+
+        <div class="filters">
+            <input type="text" class="search-box" id="searchInput" placeholder="Search patterns...">
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-category="all">All</button>
+                <button class="filter-btn" data-category="consensus">Consensus</button>
+                <button class="filter-btn" data-category="replication">Replication</button>
+                <button class="filter-btn" data-category="partitioning">Partitioning</button>
+                <button class="filter-btn" data-category="timing">Timing</button>
+                <button class="filter-btn" data-category="communication">Communication</button>
+                <button class="filter-btn" data-category="storage">Storage</button>
+                <button class="filter-btn" data-category="coordination">Coordination</button>
+            </div>
+        </div>
+
+        <div class="stats" id="stats"></div>
+        <div class="grid" id="patternsGrid"></div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close">&times;</span>
+                <h2 id="modalTitle"></h2>
+            </div>
+            <div class="modal-body">
+                <p id="modalDescription"></p>
+                <a id="modalLink" class="oreilly-link" href="#" target="_blank">Read Article on Martin Fowler</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generatePatternUrl(patternName) {
+            return "https://martinfowler.com/articles/patterns-of-distributed-systems/" + 
+                   patternName.toLowerCase()
+                           .replace(/\s+/g, '-')
+                           .replace(/[^a-z0-9-]/g, '') + 
+                   ".html";
+        }
+
+        const patterns = [
+            {
+                name: "Clock-Bound Wait",
+                category: "timing",
+                difficulty: "advanced",
+                description: "Wait to cover the uncertainty in time across cluster nodes before reading and writing values so that values can be correctly ordered across cluster nodes.",
+                examples: ["Google Spanner", "CockroachDB"],
+                tags: ["distributed-transactions", "time-synchronization"],
+                ascii: `Time ──────────────────────►
+Node A: ─[wait]─[read/write]─
+Node B: ─[wait]─[read/write]─
+        ◄─uncertainty─►`
+            },
+            {
+                name: "Consistent Core",
+                category: "coordination",
+                difficulty: "intermediate",
+                description: "Maintain a smaller cluster providing stronger consistency to allow the large data cluster to coordinate server activities without implementing quorum-based algorithms.",
+                examples: ["Kafka Controller", "HDFS NameNode"],
+                tags: ["coordination", "metadata"],
+                ascii: `Large Cluster:
+[Node1] [Node2] [Node3] ... [NodeN]
+    │       │       │          │
+    └───────┼───────┼──────────┘
+            │       │
+     Consistent Core:
+    [Core1] [Core2] [Core3]`
+            },
+            {
+                name: "Emergent Leader",
+                category: "coordination",
+                difficulty: "beginner",
+                description: "Order cluster nodes based on their age within the cluster to allow nodes to select a leader without running an explicit election.",
+                examples: ["Kubernetes", "MongoDB"],
+                tags: ["leader-election", "self-organizing"],
+                ascii: `Node Ages:
+A(10s) B(5s) C(15s) D(3s)
+   │     │     │      │
+   └─────┼─────●──────┘
+         │   Leader
+      Emergent Based on Age`
+            },
+            {
+                name: "Fixed Partitions",
+                category: "partitioning",
+                difficulty: "beginner",
+                description: "Keep the number of partitions fixed to keep the mapping of data to partition unchanged when the size of a cluster changes.",
+                examples: ["Kafka Topics", "Cassandra"],
+                tags: ["partitioning", "scalability"],
+                ascii: `Data: A B C D E F G H
+       ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓
+    [P0] [P1] [P2] [P3]
+     │    │    │    │
+  [N1]  [N2]  [N1]  [N3]
+Fixed # of partitions`
+            },
+            {
+                name: "Follower Reads",
+                category: "replication",
+                difficulty: "beginner",
+                description: "Serve read requests from followers to achieve better throughput and lower latency",
+                examples: ["MongoDB", "MySQL", "PostgreSQL"],
+                tags: ["read-scalability", "eventual-consistency"],
+                ascii: `    Writes        Reads
+Client ──────► [Leader] 
+Client ──────► [Leader]
+Client ──────────────────► [Follower]
+Client ──────────────────► [Follower]
+        Replication ──────►`
+            },
+            {
+                name: "Generation Clock",
+                category: "timing",
+                difficulty: "beginner",
+                description: "A monotonically increasing number indicating the generation of the server.",
+                examples: ["Kafka", "Zookeeper"],
+                tags: ["versioning", "fencing"],
+                ascii: `Server Restarts:
+Boot ──► Gen:1 ──► Crash
+Boot ──► Gen:2 ──► Crash  
+Boot ──► Gen:3 ──► Running
+Monotonically Increasing`
+            },
+            {
+                name: "Gossip Dissemination",
+                category: "communication",
+                difficulty: "intermediate",
+                description: "Use a random selection of nodes to pass on information to ensure it reaches all the nodes in the cluster without flooding the network",
+                examples: ["Cassandra", "Amazon DynamoDB", "Consul"],
+                tags: ["epidemic-protocols", "membership"],
+                ascii: `Round 1: A tells B,C
+Round 2: B tells D,E  C tells F,G
+Round 3: D tells H... spreading
+    A ──► B ──► D ──► H
+    └──► C ──► F ──► I
+         └──► G ──► J`
+            },
+            {
+                name: "HeartBeat",
+                category: "communication",
+                difficulty: "beginner",
+                description: "Show a server is available by periodically sending a message to all the other servers.",
+                examples: ["All distributed systems"],
+                tags: ["failure-detection", "monitoring"],
+                ascii: `Node A: ♥ ──► ♥ ──► ♥ ──► ♥
+Node B: ♥ ──► ♥ ──► X ──► X
+Node C: ♥ ──► ♥ ──► ♥ ──► ♥
+        Heartbeat Messages`
+            },
+            {
+                name: "High-Water Mark",
+                category: "replication",
+                difficulty: "intermediate",
+                description: "An index in the write-ahead log showing the last successful replication.",
+                examples: ["Kafka", "Raft"],
+                tags: ["replication", "consistency"],
+                ascii: `Leader Log: [1][2][3][4][5]
+                         ↑
+                   High Water Mark
+Follower1: [1][2][3]
+Follower2: [1][2][3][4]
+Safe to read up to index 3`
+            },
+            {
+                name: "Hybrid Clock",
+                category: "timing",
+                difficulty: "advanced",
+                description: "Use a combination of system timestamp and logical timestamp to have versions as date and time, which can be ordered",
+                examples: ["CockroachDB", "MongoDB"],
+                tags: ["causality", "ordering"],
+                ascii: `Hybrid Clock = max(local_time, 
+                      received_time) + 1
+Event: (1634567890.123, 0)
+       └─physical──┘ └logical
+Combined: wall_clock + logical`
+            },
+            {
+                name: "Idempotent Receiver",
+                category: "communication",
+                difficulty: "intermediate",
+                description: "Identify requests from clients uniquely so you can ignore duplicate requests when client retries",
+                examples: ["Banking systems", "Payment processing"],
+                tags: ["exactly-once", "deduplication"],
+                ascii: `Client: [Req:123] ──► [Req:123] retry
+Server: Received 123 ✓   Already seen 123 ✗
+        Process once     Ignore duplicate
+        Result cache: {123: "SUCCESS"}`
+            },
+            {
+                name: "Key-Range Partitions",
+                category: "partitioning",
+                difficulty: "intermediate",
+                description: "Partition data in sorted key ranges to efficiently handle range queries.",
+                examples: ["BigTable", "HBase", "TiKV"],
+                tags: ["range-queries", "sharding"],
+                ascii: `Keys: A...F │ G...M │ N...Z
+     [Node1] │[Node2]│[Node3]
+Range Query G-L: │ ◄────┘
+     Only Node2 │ queried
+     ◄─────────────┘`
+            },
+            {
+                name: "Lamport Clock",
+                category: "timing",
+                difficulty: "intermediate",
+                description: "Use logical timestamps as a version for a value to allow ordering of values across servers",
+                examples: ["Vector clocks", "Distributed databases"],
+                tags: ["causality", "logical-time"],
+                ascii: `A: 1 ──2────────4 ──► 5
+   │           │     │
+   └─msg(2)──► │ ◄───┘
+B: ────3 ──max(3,2)+1=4
+   Logical timestamps`
+            },
+            {
+                name: "Leader and Followers",
+                category: "replication",
+                difficulty: "beginner",
+                description: "Have a single server to coordinate replication across a set of servers.",
+                examples: ["MySQL", "PostgreSQL", "Raft"],
+                tags: ["primary-backup", "strong-consistency"],
+                ascii: `    Writes
+Client ────► [Leader]
+              │    │
+              ▼    ▼
+          [Follower1] [Follower2]
+             Replication`
+            },
+            {
+                name: "Lease",
+                category: "coordination",
+                difficulty: "intermediate",
+                description: "Use time-bound leases for cluster nodes to coordinate their activities.",
+                examples: ["Chubby", "etcd", "Consul"],
+                tags: ["distributed-locking", "time-bounds"],
+                ascii: `Node requests lease:
+T0: [Grant: 30s] ──────► T30: [Expire]
+    Node holds resource  Must renew or release
+    ◄─── Lease Time ────►`
+            },
+            {
+                name: "Low-Water Mark",
+                category: "storage",
+                difficulty: "intermediate",
+                description: "An index in the write-ahead log showing which portion of the log can be discarded.",
+                examples: ["Kafka", "DistributedLog"],
+                tags: ["log-compaction", "garbage-collection"],
+                ascii: `Log: [1][2][3][4][5][6][7]
+          ↑              ↑
+    Low Water      High Water
+    (Can delete)   (Replicated)
+    ◄─ Safe to discard`
+            },
+            {
+                name: "Majority Quorum",
+                category: "consensus",
+                difficulty: "intermediate",
+                description: "Avoid two groups of servers making independent decisions by requiring majority for taking every decision.",
+                examples: ["Raft", "MongoDB", "Cassandra"],
+                tags: ["consensus", "split-brain"],
+                ascii: `5 Nodes: Need 3 for majority
+Partition: [A][B][C] │ [D][E]
+          Majority=3 │ Minority=2
+          Can proceed │ Must wait
+                     │ Network split`
+            },
+            {
+                name: "Paxos",
+                category: "consensus",
+                difficulty: "advanced",
+                description: "Use two consensus building phases to reach safe consensus even when nodes disconnect",
+                examples: ["Google Spanner", "Apache Cassandra"],
+                tags: ["byzantine-fault-tolerant", "consensus"],
+                ascii: `Phase 1: Prepare(n)
+Proposer ──► Acceptors
+         ◄── Promise/Reject
+
+Phase 2: Accept(n,v)  
+Proposer ──► Acceptors
+         ◄── Accepted/Rejected`
+            },
+            {
+                name: "Replicated Log",
+                category: "replication",
+                difficulty: "intermediate",
+                description: "Keep the state of multiple nodes synchronized by using a write-ahead log that is replicated to all the cluster nodes.",
+                examples: ["Raft", "Kafka", "HDFS"],
+                tags: ["state-machine", "consensus"],
+                ascii: `Leader: [Op1][Op2][Op3]
+         │     │     │
+         ▼     ▼     ▼
+Node1:  [Op1][Op2][Op3]
+Node2:  [Op1][Op2][  ]
+        Replicated Logs`
+            },
+            {
+                name: "Request Batch",
+                category: "communication",
+                difficulty: "beginner",
+                description: "Combine multiple requests to optimally utilise the network",
+                examples: ["Kafka Producer", "Database batch inserts"],
+                tags: ["throughput", "latency"],
+                ascii: `Individual: Req1──►│Req2──►│Req3──►
+Batched:   [Req1,Req2,Req3]────────►
+           Fewer network roundtrips`
+            },
+            {
+                name: "Request Pipeline",
+                category: "communication",
+                difficulty: "intermediate",
+                description: "Improve latency by sending multiple requests on the connection without waiting for the response of the previous requests.",
+                examples: ["Redis Pipeline", "HTTP/2"],
+                tags: ["pipelining", "throughput"],
+                ascii: `Without Pipeline:
+Req1──►Resp1──►Req2──►Resp2
+
+With Pipeline:
+Req1──►Req2──►Req3──►
+◄─Resp1◄─Resp2◄─Resp3`
+            },
+            {
+                name: "Request Waiting List",
+                category: "coordination",
+                difficulty: "intermediate",
+                description: "Track client requests which require responses after the criteria to respond is met based on responses from other cluster nodes.",
+                examples: ["Distributed consensus", "Quorum reads"],
+                tags: ["coordination", "async-processing"],
+                ascii: `Client Request ──► [Waiting List]
+                      │     │
+             Response │     │ Waiting for
+             Ready ◄──┘     │ more nodes
+                            ▼
+                      Track & Wait`
+            },
+            {
+                name: "Segmented Log",
+                category: "storage",
+                difficulty: "beginner",
+                description: "Split log into multiple smaller files instead of a single large file for easier operations.",
+                examples: ["Kafka", "Apache BookKeeper"],
+                tags: ["log-management", "performance"],
+                ascii: `Single Log: [──────Large File──────]
+
+Segmented:  [Seg1][Seg2][Seg3][Seg4]
+            │ 1MB││ 1MB││ 1MB││Active│
+            Easier to manage & rotate`
+            },
+            {
+                name: "Single-Socket Channel",
+                category: "communication",
+                difficulty: "beginner",
+                description: "Maintain the order of the requests sent to a server by using a single TCP connection",
+                examples: ["Raft", "Database connections"],
+                tags: ["ordering", "tcp"],
+                ascii: `Client ═══════► Server
+        Single TCP
+    Req1 ─► Req2 ─► Req3
+    Order preserved in sequence`
+            },
+            {
+                name: "Singular Update Queue",
+                category: "coordination",
+                difficulty: "beginner",
+                description: "Use a single thread to process requests asynchronously to maintain order without blocking the caller.",
+                examples: ["Actor model", "Event loops"],
+                tags: ["ordering", "concurrency"],
+                ascii: `Requests: Req1,Req2,Req3
+             │    │    │
+             ▼    ▼    ▼
+          [Queue───────]
+             │
+             ▼
+        [Single Thread]
+        Processes in order`
+            },
+            {
+                name: "State Watch",
+                category: "communication",
+                difficulty: "beginner",
+                description: "Notify clients when specific values change on the server",
+                examples: ["Kubernetes", "etcd", "Zookeeper"],
+                tags: ["event-driven", "notifications"],
+                ascii: `Client ──watch──► Server
+       ◄─notification─ │
+                       │ Value
+State: A ──► B ──► C   │ Changed
+       │     │     │   │
+       └─────┼─────┼───┘
+           notify  notify`
+            },
+            {
+                name: "Two-Phase Commit",
+                category: "consensus",
+                difficulty: "intermediate",
+                description: "Update resources on multiple nodes in one atomic operation",
+                examples: ["XA Transactions", "Database transactions"],
+                tags: ["acid", "distributed-transactions"],
+                ascii: `Phase 1: Prepare
+Coordinator ──► [Node1][Node2][Node3]
+            ◄── [Yes]  [Yes]  [Yes]
+
+Phase 2: Commit
+Coordinator ──► [Node1][Node2][Node3]
+            ◄── [Done] [Done] [Done]`
+            },
+            {
+                name: "Version Vector",
+                category: "timing",
+                difficulty: "advanced",
+                description: "Maintain a list of counters, one per cluster node, to detect concurrent updates",
+                examples: ["Riak", "Voldemort", "CRDTs"],
+                tags: ["causality", "conflict-detection"],
+                ascii: `Node A: [A:1, B:0, C:0]
+Node B: [A:1, B:1, C:0]  
+Node C: [A:0, B:0, C:1]
+        Vector Clocks track causality`
+            },
+            {
+                name: "Versioned Value",
+                category: "storage",
+                difficulty: "beginner",
+                description: "Store every update to a value with a new version, to allow reading historical values.",
+                examples: ["Git", "MVCC databases"],
+                tags: ["time-travel", "immutability"],
+                ascii: `Value X:
+V1: "hello"   ← Read historical
+V2: "world"   ← Read historical  
+V3: "!!"      ← Current version
+    All versions preserved`
+            },
+            {
+                name: "Write-Ahead Log",
+                category: "storage",
+                difficulty: "beginner",
+                description: "Provide durability guarantee without the storage data structures to be flushed to disk, by persisting every state change as a command to the append only log.",
+                examples: ["PostgreSQL", "Redis", "MySQL"],
+                tags: ["durability", "crash-recovery"],
+                ascii: `Memory: [Data Structure]
+           │        │
+        Update   Persist
+           │        │
+           ▼        ▼
+        [WAL] ──► [Disk]
+        Append-only log`
+            }
+        ];
+
+        let currentFilter = 'all';
+        let currentSearch = '';
+
+        function createCards() {
+            const grid = document.getElementById('patternsGrid');
+            grid.innerHTML = '';
+            
+            patterns.forEach(pattern => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.category = pattern.category;
+                card.dataset.difficulty = pattern.difficulty;
+                card.dataset.name = pattern.name.toLowerCase();
+                
+                const tagsHtml = pattern.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+                const examplesHtml = pattern.examples.join(', ');
+                
+                card.innerHTML = `
+                    <h3>
+                        <span class="card-icon"></span>
+                        ${pattern.name}
+                        <span class="difficulty-badge difficulty-${pattern.difficulty}">${pattern.difficulty}</span>
+                    </h3>
+                    <div class="category-badge">${pattern.category}</div>
+                    <p>${pattern.description}</p>
+                    <div class="ascii-preview">${pattern.ascii}</div>
+                    <div class="card-tags">${tagsHtml}</div>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">
+                        <strong>Examples:</strong> ${examplesHtml}
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => openModal(pattern));
+                grid.appendChild(card);
+            });
+            
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const cards = document.querySelectorAll('.card');
+            let visibleCount = 0;
+            
+            cards.forEach(card => {
+                const category = card.dataset.category;
+                const name = card.dataset.name;
+                const cardText = card.textContent.toLowerCase();
+                
+                const categoryMatch = currentFilter === 'all' || category === currentFilter;
+                const searchMatch = currentSearch === '' || 
+                    name.includes(currentSearch) || 
+                    cardText.includes(currentSearch);
+                
+                if (categoryMatch && searchMatch) {
+                    card.classList.add('visible');
+                    visibleCount++;
+                } else {
+                    card.classList.remove('visible');
+                }
+            });
+            
+            updateStats(visibleCount);
+        }
+        
+        function updateStats(count) {
+            const stats = document.getElementById('stats');
+            const total = patterns.length;
+            stats.textContent = `Showing ${count} of ${total} patterns`;
+        }
+
+        function openModal(pattern) {
+            const modal = document.getElementById('modal');
+            const title = document.getElementById('modalTitle');
+            const description = document.getElementById('modalDescription');
+            const link = document.getElementById('modalLink');
+            
+            title.textContent = pattern.name;
+            description.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <span class="category-badge">${pattern.category}</span>
+                        <span class="difficulty-badge difficulty-${pattern.difficulty}">${pattern.difficulty}</span>
+                    </div>
+                    <p style="margin-bottom: 20px;">${pattern.description}</p>
+                    <div style="background: #f8fafc; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 10px; color: #374151;">Architecture:</h4>
+                        <pre style="font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.4; margin: 0; white-space: pre-wrap;">${pattern.ascii}</pre>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Real-world examples:</strong> ${pattern.examples.join(', ')}
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        ${pattern.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+            link.href = generatePatternUrl(pattern.name);
+            
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            createCards();
+            
+            // Filter buttons
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.category;
+                    applyFilters();
+                });
+            });
+            
+            // Search input
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', (e) => {
+                currentSearch = e.target.value.toLowerCase();
+                applyFilters();
+            });
+            
+            // Modal controls
+            const closeBtn = document.getElementsByClassName('close')[0];
+            const modal = document.getElementById('modal');
+            
+            closeBtn.onclick = closeModal;
+            
+            window.onclick = function(event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            }
+            
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
